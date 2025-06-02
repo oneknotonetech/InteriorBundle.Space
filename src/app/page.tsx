@@ -1,103 +1,159 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import heroSlides from '@/data/hero-carousel';
+import bestsellerBundles from '@/data/best-seller';
+
+const Homepage: React.FC = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-[var(--color-light-gray)]">
+      {/* Hero Section with Carousel */}
+      <section className="relative bg-[var(--color-cream)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="relative h-96 bg-[var(--color-light-gray)] rounded-lg overflow-hidden">
+            {/* Carousel Images */}
+            <div className="relative h-full">
+              {heroSlides.map((slide, index) => (
+                <motion.div
+                  key={slide.id}
+                  className={`absolute inset-0 flex items-center justify-center ${
+                    index === currentSlide ? 'block' : 'hidden'
+                  }`}
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: index === currentSlide ? 1 : 0, x: index === currentSlide ? 0 : 100 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="text-center">
+                    <div className="text-6xl font-light text-gray-400 mb-4">{slide.image}</div>
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">{slide.title}</h2>
+                    <p className="text-gray-600">{slide.subtitle}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevSlide}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-all"
+            >
+              <ChevronLeft className="h-6 w-6 text-gray-700" />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-all"
+            >
+              <ChevronRight className="h-6 w-6 text-gray-700" />
+            </button>
+          </div>
+
+          {/* Carousel Indicators */}
+          <div className="flex justify-center mt-6 space-x-2">
+            {heroSlides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentSlide ? 'bg-gray-800' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Bestseller Bundles Section */}
+      <section className="py-16 bg-[var(--color-light-gray)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold text-[var(--color-black)] mb-2">Bestseller Bundles</h2>
+            <p className="text-[var(--color-warm-gray)]">Discover our most popular interior design collections</p>
+          </div>
+
+          {/* Bundles Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {bestsellerBundles.map((bundle, index) => (
+              <motion.div
+                key={bundle.id}
+                className="bg-white rounded-lg shadow-md overflow-hidden group cursor-pointer"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+              >
+                {/* Image Placeholder */}
+                <div className="h-64 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+                  <span className="text-2xl font-light text-gray-400">{bundle.image}</span>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">
+                    {bundle.title}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl font-bold text-gray-900">{bundle.price}</span>
+                      <span className="text-sm text-gray-500 line-through">{bundle.originalPrice}</span>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors"
+                    >
+                      View Bundle
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="py-16 bg-[var(--color-black)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl font-bold text-[var(--color-cream)] mb-4">
+              Ready to Transform Your Space?
+            </h2>
+            <p className="text-[var(--color-warm-gray)] mb-8 max-w-2xl mx-auto">
+              Explore our complete collection of interior design bundles and find the perfect style for your home.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-[var(--color-cream)] text-[var(--color-black)] px-8 py-3 rounded-md font-semibold hover:bg-[var(--color-light-gray)] transition-colors"
+            >
+              Shop All Bundles
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
     </div>
   );
-}
+};
+
+export default Homepage;
