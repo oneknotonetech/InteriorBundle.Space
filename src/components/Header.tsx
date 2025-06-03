@@ -18,7 +18,7 @@ const NAV_LINKS = [
   { label: 'Inspirations', href: '/inspiration' },
   { label: 'Design Themes', href: '/design-themes' },
   { label: 'GenAI Studio', href: '/gen-ai-studio' },
-  { label: '3D Visualizer', href: '/visualizer' },
+  { label: '3D Visualizer', href: '/3D-visualizer' },
   { label: 'Wishlist', href: '/wishlist' },
 ];
 

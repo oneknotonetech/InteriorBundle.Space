@@ -18,13 +18,22 @@ import { inspirationItems } from '@/data/inspirationItems';
 import { InspirationItem } from '@/data/type';
 import { roomCategories } from '@/data/roomCategories';
 
+const WISHLIST_KEY = 'wishlist';
+
 export default function InspirationPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('living-room');
   const [filteredItems, setFilteredItems] = useState<InspirationItem[]>([]);
-  const [items, setItems] = useState<InspirationItem[]>(inspirationItems);
+  const items = inspirationItems;
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [previewItem, setPreviewItem] = useState<InspirationItem | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [wishlistIds, setWishlistIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(WISHLIST_KEY);
+      if (stored) return JSON.parse(stored);
+    }
+    return [];
+  });
 
   useEffect(() => {
     if (searchQuery) {
@@ -42,12 +51,33 @@ export default function InspirationPage() {
     }
   }, [selectedCategory, items, searchQuery]);
 
+  // Sync wishlistIds to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlistIds));
+    }
+  }, [wishlistIds]);
+
+  // Listen for storage changes (sync across tabs/pages)
+  useEffect(() => {
+    const onStorage = () => {
+      const stored = localStorage.getItem(WISHLIST_KEY);
+      if (stored) setWishlistIds(JSON.parse(stored));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const toggleWishlist = (id: string) => {
-    setItems(prevItems => 
-      prevItems.map(item => 
-        item.id === id ? { ...item, inWishlist: !item.inWishlist } : item
-      )
-    );
+    setWishlistIds(prev => {
+      let updated: string[];
+      if (prev.includes(id)) {
+        updated = prev.filter(wid => wid !== id);
+      } else {
+        updated = [...prev, id];
+      }
+      return updated;
+    });
   };
 
   // Animation variants
@@ -212,14 +242,14 @@ export default function InspirationPage() {
                           whileTap={{ scale: 0.9 }}
                           onClick={e => { e.stopPropagation(); toggleWishlist(item.id); }}
                           className={`p-2 rounded-full ${
-                            item.inWishlist
+                            wishlistIds.includes(item.id)
                               ? 'bg-red-50 text-red-500'
                               : 'bg-white/80 text-gray-500 hover:text-red-500'
                           } backdrop-blur-sm shadow-sm`}
                         >
                           <Heart 
                             size={16} 
-                            className={item.inWishlist ? "fill-red-500" : ""} 
+                            className={wishlistIds.includes(item.id) ? "fill-red-500" : ""} 
                           />
                         </motion.button>
                       </div>
@@ -244,9 +274,9 @@ export default function InspirationPage() {
                       >
                         <Heart 
                           size={16} 
-                          className={item.inWishlist ? "fill-red-500 text-red-500" : ""} 
+                          className={wishlistIds.includes(item.id) ? "fill-red-500 text-red-500" : ""} 
                         />
-                        {item.inWishlist ? 'Added to Wishlist' : 'Add to Wishlist'}
+                        {wishlistIds.includes(item.id) ? 'Added to Wishlist' : 'Add to Wishlist'}
                       </Button>
                     </CardFooter>
                   </Card>

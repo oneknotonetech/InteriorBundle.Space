@@ -1,16 +1,18 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Shuffle, Calculator, TrendingUp } from 'lucide-react';
 import { designThemesData, productBundlesData, budgetRanges } from '@/data/design-theme';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { motion } from 'framer-motion';
 
 const DesignThemesPage = () => {
   const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
   const [ratedCount, setRatedCount] = useState(0);
+  const [ratedThemes, setRatedThemes] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState({
     roomType: '',
     style: '',
@@ -30,15 +32,15 @@ const DesignThemesPage = () => {
 
   const currentTheme = designThemesData[currentThemeIndex];
 
-  const handleRating = () => {
-    setRatedCount(prev => prev + 1);
-    // Move to next theme
-    if (currentThemeIndex < designThemesData.length - 1) {
-      setCurrentThemeIndex(prev => prev + 1);
-    } else {
-      setCurrentThemeIndex(0); // Loop back to start
+  const handleRating = (themeIndex: number, rating: number) => {
+    if (!ratedThemes.has(themeIndex)) {
+      setRatedCount(prev => prev + 1);
+      setRatedThemes(prev => new Set([...prev, themeIndex]));
+      // Store the rating for future use
+      const updatedTheme = { ...currentTheme, rating };
+      designThemesData[themeIndex] = updatedTheme;
     }
-  };
+  }
 
   const handleFormChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -70,15 +72,13 @@ const DesignThemesPage = () => {
     }
 
     setRecommendations(filtered.slice(0, 3) as typeof recommendations); // Show top 3 recommendations
-  };
+    };
 
-  const getNextTheme = () => {
-    if (currentThemeIndex < designThemesData.length - 1) {
-      setCurrentThemeIndex(prev => prev + 1);
-    } else {
-      setCurrentThemeIndex(0);
-    }
-  };
+  const getNextTheme = useCallback(() => {
+    setCurrentThemeIndex(prev => 
+      prev < designThemesData.length - 1 ? prev + 1 : 0
+    );
+  }, [currentThemeIndex]);
 
   return (
     <motion.div className="min-h-screen bg-gray-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -176,7 +176,7 @@ const DesignThemesPage = () => {
           </div>
         </motion.div>
 
-        {/* Rate Design Themes Section */}
+        {/* Rate Design Themes Section with Carousel */}
         <motion.div className="bg-white rounded-xl shadow-lg p-8 mb-12" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Rate Design Themes</h2>
@@ -187,50 +187,79 @@ const DesignThemesPage = () => {
             </div>
           </div>
 
-          <motion.div className="max-w-md mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="bg-gray-50 rounded-2xl p-6 mb-6">
-              <img 
-                src={currentTheme.image} 
-                alt={currentTheme.name}
-                className="w-full h-64 object-cover rounded-xl mb-4"
-              />
-              <div className="text-xl font-bold text-gray-900 mb-2">{currentTheme.name}</div>
-              <div className="text-gray-600 text-sm mb-3">{currentTheme.description}</div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {currentTheme.colors.map((color, index) => (
-                  <span key={index} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">
-                    {color}
-                  </span>
-                ))}
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-500 mb-3">Rate this design theme (1-10)</p>
-                <div className="flex justify-center space-x-2">
-                  {[1,2,3,4,5,6,7,8,9,10].map((rating) => (
-                    <motion.button
-                      key={rating}
-                      onClick={handleRating}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-10 h-10 rounded-full border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 font-medium cursor-pointer"
+          <div className="max-w-5xl mx-auto">
+            <Carousel className="w-full">
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {designThemesData.map((theme, index) => (
+                  <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                    <motion.div 
+                      className="p-1"
+                      initial={{ opacity: 0, y: 20 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      transition={{ delay: index * 0.1 }}
                     >
-                      {rating}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            </Card>
-            <div className="text-center">
-              <Button
-                variant="ghost"
-                onClick={getNextTheme}
-                className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-              >
-                <Shuffle className="w-4 h-4 mr-2" />
-                Skip this theme
-              </Button>
+                      <Card className={`bg-gray-50 rounded-2xl p-6 h-full transition-all duration-300 ${
+                        ratedThemes.has(index) ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+                      }`}>
+                        <img 
+                          src={theme.image} 
+                          alt={theme.name}
+                          className="w-full h-48 object-cover rounded-xl mb-4"
+                        />
+                        <div className="text-lg font-bold text-gray-900 mb-2">{theme.name}</div>
+                        <div className="text-gray-600 text-sm mb-3 line-clamp-2">{theme.description}</div>
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {theme.colors.slice(0, 3).map((color, colorIndex) => (
+                            <span key={colorIndex} className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">
+                              {color}
+                            </span>
+                          ))}
+                          {theme.colors.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-300 text-gray-600 text-xs rounded-full">
+                              +{theme.colors.length - 3}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {ratedThemes.has(index) ? (
+                          <div className="text-center">
+                            <div className="inline-flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                              ✓ Rated
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 mb-2">Rate this theme (1-10)</p>
+                            <div className="grid grid-cols-5 gap-1">
+                              {[1,2,3,4,5,6,7,8,9,10].map((rating) => (
+                                <motion.button
+                                  key={rating}
+                                  onClick={() => handleRating(index, rating)}
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="w-8 h-8 text-xs rounded-full border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 font-medium cursor-pointer"
+                                >
+                                  {rating}
+                                </motion.button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    </motion.div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-2" />
+              <CarouselNext className="right-2" />
+            </Carousel>
+            
+            <div className="text-center mt-6">
+              <p className="text-sm text-gray-500">
+                Swipe or use the arrows to explore all {designThemesData.length} design themes
+              </p>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* Choice Calculator */}

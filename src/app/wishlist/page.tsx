@@ -1,23 +1,38 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Star, Download, Eye, Trash2 } from 'lucide-react';
-import { wishlistItems as initialWishlistItems } from '@/data/wishlist';
+import { Heart, Trash2 } from 'lucide-react';
+import { inspirationItems as allInspirations } from '@/data/inspirationItems';
+
+const WISHLIST_KEY = 'wishlist';
 
 export default function WishlistPage() {
-  const [wishlistItems, setWishlistItems] = useState<typeof initialWishlistItems[0][]>(initialWishlistItems);
+  // Initialize wishlist from localStorage or from data
+  const [wishlistItems, setWishlistItems] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(WISHLIST_KEY);
+      if (stored) {
+        const ids = JSON.parse(stored);
+        return allInspirations.filter(item => ids.includes(item.id));
+      }
+    }
+    return allInspirations.filter(item => item.inWishlist);
+  });
 
-  const removeFromWishlist = (id: number) => {
+  // Sync wishlist to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlistItems.map(item => item.id)));
+    }
+  }, [wishlistItems]);
+
+  // Remove from wishlist (local state and demo update to data array)
+  const removeFromWishlist = (id: string) => {
     setWishlistItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const toggleLike = (id: number) => {
-    setWishlistItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, isLiked: !item.isLiked } : item
-      )
-    );
+    // Demo: update inWishlist in the data array (not persistent)
+    const idx = allInspirations.findIndex(item => item.id === id);
+    if (idx !== -1) allInspirations[idx].inWishlist = false;
   };
 
   const containerVariants = {
@@ -52,17 +67,6 @@ export default function WishlistPage() {
       transition: {
         duration: 0.3
       }
-    }
-  };
-
-  const heartVariants = {
-    liked: { 
-      scale: [1, 1.3, 1], 
-      transition: { duration: 0.3 } 
-    },
-    unliked: { 
-      scale: 1,
-      transition: { duration: 0.2 } 
     }
   };
 
@@ -131,54 +135,26 @@ export default function WishlistPage() {
                   variants={cardVariants}
                   exit="exit"
                   layout
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-black transition-colors duration-300"
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:cursor-pointer shadow-md transition-all duration-300"
                 >
                   {/* Image Container */}
-                  <div className="relative group">
+                  <div className="relative group bg-gray-100">
                     <img
-                      src={item.image}
+                      src={item.imageUrl || (item.images && item.images[0]) || '/vercel.svg'}
                       alt={item.title}
                       className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/vercel.svg'; }}
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
-                    
-                    {/* Action buttons overlay */}
-                    <div className="absolute top-3 right-3 flex space-x-2">
-                      <motion.button
-                        variants={heartVariants}
-                        animate={item.isLiked ? "liked" : "unliked"}
-                        onClick={() => toggleLike(item.id)}
-                        className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-                          item.isLiked 
-                            ? 'bg-black text-white' 
-                            : 'bg-white/80 text-gray-600 hover:text-black'
-                        }`}
-                      >
-                        <Heart className={`w-4 h-4 ${item.isLiked ? 'fill-current' : ''}`} />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => removeFromWishlist(item.id)}
-                        className="p-2 rounded-full bg-white/80 text-gray-600 hover:text-black backdrop-blur-sm transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-
-                    {/* Quick action buttons */}
-                    <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="flex space-x-2">
-                        <button className="p-2 bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 bg-black rounded-full text-white hover:bg-gray-800 transition-colors">
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                    <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
+                    {/* Remove Button */}
+                    <button
+                      onClick={() => removeFromWishlist(item.id)}
+                      className="absolute top-3 right-3 p-2 rounded-full bg-white/80 text-gray-600 hover:text-black backdrop-blur-sm transition-colors"
+                      title="Remove from wishlist"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-
                   {/* Content */}
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-3">
@@ -186,53 +162,22 @@ export default function WishlistPage() {
                         {item.title}
                       </h3>
                     </div>
-
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                       {item.description}
                     </p>
-
                     {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {item.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center space-x-4 mb-4 text-sm text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-4 h-4 fill-gray-400 text-gray-400" />
-                        <span>{item.rating}</span>
+                    {item.tags && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {item.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
+                          >
+                            {tag}
+                          </span>
+                        ))}
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Download className="w-4 h-4" />
-                        <span>{item.downloads}</span>
-                      </div>
-                    </div>
-
-                    {/* Price and CTA */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-black">
-                          {item.price}
-                        </span>
-                        <span className="text-sm text-gray-500 line-through">
-                          {item.originalPrice}
-                        </span>
-                      </div>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-                      >
-                        Add to Cart
-                      </motion.button>
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -258,7 +203,7 @@ export default function WishlistPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-all duration-300 font-medium"
+                className="bg-black cursor-pointer text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-all duration-300 font-medium"
               >
                 Add All to Cart
               </motion.button>

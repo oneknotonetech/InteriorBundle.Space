@@ -5,11 +5,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '1',
     title: 'Modern Living Room',
-    imageUrl: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80',
+    imageUrl: '/image/Living Room/modern-minimalist-LR.jpg',
     images: [
-      'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80',
-      'https://images.unsplash.com/photo-1460518451285-97b6aa326961?w=800&q=80'
+      '/image/Living Room/modern-minimalist-LR.jpg',
+      '/image/Living Room/modern-minimalist-LR.jpg',
+      '/image/Living Room/modern-minimalist-LR.jpg'
     ],
     category: 'living-room',
     tags: ['modern', 'minimalist', 'contemporary'],
@@ -19,11 +19,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '2',
     title: 'Cozy Living Area',
-    imageUrl: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=800&q=80',
+    imageUrl: '/image/Living Room/Cozy_LA.jpg',
     images: [
-      'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=800&q=80',
-      'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=800&q=80'
+      '/image/Living Room/Cozy_LA.jpg',
+      '/image/Living Room/Cozy_LA.jpg',
+      '/image/Living Room/Cozy_LA.jpg'
     ],
     category: 'living-room',
     tags: ['cozy', 'warm', 'traditional'],
@@ -33,11 +33,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '3',
     title: 'Bright Living Space',
-    imageUrl: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=800&q=80',
+    imageUrl: '/image/Living Room/bright-living-room.png',
     images: [
-      'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=800&q=80',
-      'https://images.unsplash.com/photo-1464983953574-0892a716854b?w=800&q=80',
-      'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80'
+      '/image/Living Room/bright-living-room.png',
+      '/image/Living Room/bright-living-room.png',
+      '/image/Living Room/bright-living-room.png'
     ],
     category: 'living-room',
     tags: ['bright', 'airy', 'scandinavian'],
@@ -47,11 +47,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '4',
     title: 'Master Bedroom Retreat',
-    imageUrl: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80',
+    imageUrl: '/image/Master Bedroom/MB-retreat.jpg',
     images: [
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80',
-      'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?w=800&q=80'
+      '/image/Master Bedroom/MB-retreat.jpg',
+      '/image/Master Bedroom/MB-retreat.jpg',
+      '/image/Master Bedroom/MB-retreat.jpg'
     ],
     category: 'master-bedroom',
     tags: ['luxurious', 'master bedroom', 'retreat'],
@@ -61,11 +61,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '5',
     title: 'Minimalist Bedroom',
-    imageUrl: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80',
+    imageUrl: '/image/Guest Bedroom/GB-minimalist.jpg',
     images: [
-      'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?w=800&q=80',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80'
+      '/image/Guest Bedroom/GB-minimalist.jpg',
+      '/image/Guest Bedroom/GB-minimalist.jpg',
+      '/image/Guest Bedroom/GB-minimalist.jpg'
     ],
     category: 'guest-bedroom',
     tags: ['minimalist', 'calm', 'contemporary'],
@@ -75,11 +75,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '6',
     title: 'Kids Bedroom',
-    imageUrl: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80',
+    imageUrl: '/image/Kids Bedroom/KB-playfull.jpg',
     images: [
-      'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?w=800&q=80'
+      '/image/Kids Bedroom/KB-playfull.jpg',
+      '/image/Kids Bedroom/KB-playfull.jpg',
+      '/image/Kids Bedroom/KB-playfull.jpg'
     ],
     category: 'kids-bedroom',
     tags: ['kids', 'playful', 'colorful'],
@@ -89,11 +89,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '7',
     title: 'Modern Kitchen',
-    imageUrl: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80',
+    imageUrl: '/image/Kitchen/K-modern.jpg',
     images: [
-      'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=800&q=80',
-      'https://images.unsplash.com/photo-1464983953574-0892a716854b?w=800&q=80'
+      '/image/Kitchen/K-modern.jpg',
+      '/image/Kitchen/K-modern.jpg',
+      '/image/Kitchen/K-modern.jpg'
     ],
     category: 'main-kitchen',
     tags: ['modern', 'functional', 'sleek'],
@@ -103,11 +103,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '8',
     title: 'Luxury Bathroom',
-    imageUrl: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?w=800&q=80',
+    imageUrl: '/image/Master Bathroom/MBR-luxury.jpg',
     images: [
-      'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=800&q=80',
-      'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80'
+      '/image/Master Bathroom/MBR-luxury.jpg',
+      '/image/Master Bathroom/MBR-luxury.jpg',
+      '/image/Master Bathroom/MBR-luxury.jpg'
     ],
     category: 'master-bathroom',
     tags: ['luxury', 'spa-like', 'elegant'],
@@ -117,11 +117,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '9',
     title: 'Compact Bathroom',
-    imageUrl: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=800&q=80',
+    imageUrl: '/image/Guest Bathroom/GBR-compact.jpg',
     images: [
-      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=800&q=80',
-      'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80',
-      'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?w=800&q=80'
+      '/image/Guest Bathroom/GBR-compact.jpg',
+      '/image/Guest Bathroom/GBR-compact.jpg',
+      '/image/Guest Bathroom/GBR-compact.jpg'
     ],
     category: 'guest-bathroom',
     tags: ['compact', 'efficient', 'modern'],
@@ -131,11 +131,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '10',
     title: 'Urban Balcony Garden',
-    imageUrl: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?w=800&q=80',
+    imageUrl: '/image/Balcony/Balcony-urban.jpg',
     images: [
-      'https://images.unsplash.com/photo-1464983953574-0892a716854b?w=800&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80',
-      'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=800&q=80'
+      '/image/Balcony/Balcony-urban.jpg',
+      '/image/Balcony/Balcony-urban.jpg',
+      '/image/Balcony/Balcony-urban.jpg'
     ],
     category: 'main-balcony',
     tags: ['outdoor', 'garden', 'urban'],
@@ -145,11 +145,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '11',
     title: 'Contemporary Living Room',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Living Room/contemporary-LR.jpg',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Contemporary+View+1',
-      'https://placehold.co/400x300?text=Contemporary+View+2'
+      '/image/Living Room/contemporary-LR.jpg',
+      '/image/Living Room/contemporary-LR.jpg',
+      '/image/Living Room/contemporary-LR.jpg'
     ],
     category: 'living-room',
     tags: ['contemporary', 'artistic', 'bold'],
@@ -159,11 +159,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '12',
     title: 'Luxury Master Suite',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Master Bedroom/MB-luxury-suite.jpg',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Luxury+Master+View+1',
-      'https://placehold.co/400x300?text=Luxury+Master+View+2'
+      '/image/Master Bedroom/MB-luxury-suite.jpg',
+      '/image/Master Bedroom/MB-luxury-suite.jpg',
+      '/image/Master Bedroom/MB-luxury-suite.jpg'
     ],
     category: 'master-bedroom',
     tags: ['luxury', 'spacious', 'elegant'],
@@ -173,11 +173,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '13',
     title: 'Comfortable Guest Room',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Guest Bedroom/GB-comfortable.jpg',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Comfortable+View+1',
-      'https://placehold.co/400x300?text=Comfortable+View+2'
+      '/image/Guest Bedroom/GB-comfortable.jpg',
+      '/image/Guest Bedroom/GB-comfortable.jpg',
+      '/image/Guest Bedroom/GB-comfortable.jpg'
     ],
     category: 'guest-bedroom',
     tags: ['comfortable', 'welcoming', 'neutral'],
@@ -187,11 +187,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '14',
     title: 'Adventure Kids Room',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Kids Bedroom/KB-adventure.jpg',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Adventure+View+1',
-      'https://placehold.co/400x300?text=Adventure+View+2'
+      '/image/Kids Bedroom/KB-adventure.jpg',
+      '/image/Kids Bedroom/KB-adventure.jpg',
+      '/image/Kids Bedroom/KB-adventure.jpg'
     ],
     category: 'kids-bedroom',
     tags: ['adventure', 'creative', 'themed'],
@@ -201,11 +201,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '15',
     title: 'Gourmet Kitchen',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Kitchen/K-gourmet.png',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Gourmet+View+1',
-      'https://placehold.co/400x300?text=Gourmet+View+2'
+      '/image/Kitchen/K-gourmet.png',
+      '/image/Kitchen/K-gourmet.png',
+      '/image/Kitchen/K-gourmet.png'
     ],
     category: 'main-kitchen',
     tags: ['gourmet', 'professional', 'spacious'],
@@ -215,11 +215,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '16',
     title: 'Spa Master Bathroom',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Master Bathroom/MBR-spa.png',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Spa+View+1',
-      'https://placehold.co/400x300?text=Spa+View+2'
+      '/image/Master Bathroom/MBR-spa.png',
+      '/image/Master Bathroom/MBR-spa.png',
+      '/image/Master Bathroom/MBR-spa.png'
     ],
     category: 'master-bathroom',
     tags: ['spa', 'luxury', 'wellness'],
@@ -229,11 +229,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '17',
     title: 'Modern Guest Bathroom',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Guest Bathroom/GBR-modern.png',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Modern+Guest+View+1',
-      'https://placehold.co/400x300?text=Modern+Guest+View+2'
+      '/image/Guest Bathroom/GBR-modern.png',
+      '/image/Guest Bathroom/GBR-modern.png',
+      '/image/Guest Bathroom/GBR-modern.png'
     ],
     category: 'guest-bathroom',
     tags: ['modern', 'clean', 'functional'],
@@ -243,11 +243,11 @@ export const inspirationItems: InspirationItem[] = [
   {
     id: '18',
     title: 'Entertainment Balcony',
-    imageUrl: 'https://placehold.co/400x300',
+    imageUrl: '/image/Balcony/Balcony-entertainment.jpg',
     images: [
-      'https://placehold.co/400x300',
-      'https://placehold.co/400x300?text=Entertainment+View+1',
-      'https://placehold.co/400x300?text=Entertainment+View+2'
+      '/image/Balcony/Balcony-entertainment.jpg',
+      '/image/Balcony/Balcony-entertainment.jpg',
+      '/image/Balcony/Balcony-entertainment.jpg'
     ],
     category: 'main-balcony',
     tags: ['entertainment', 'outdoor', 'modern'],
