@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useCallback, useState } from 'react';
-import { Shuffle, Calculator, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calculator, TrendingUp } from 'lucide-react';
 import { designThemesData, productBundlesData, budgetRanges } from '@/data/design-theme';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { motion } from 'framer-motion';
 
 const DesignThemesPage = () => {
-  const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
+  const [currentThemeIndex] = useState(0);
   const [ratedCount, setRatedCount] = useState(0);
   const [ratedThemes, setRatedThemes] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState({
@@ -72,13 +72,7 @@ const DesignThemesPage = () => {
     }
 
     setRecommendations(filtered.slice(0, 3) as typeof recommendations); // Show top 3 recommendations
-    };
-
-  const getNextTheme = useCallback(() => {
-    setCurrentThemeIndex(prev => 
-      prev < designThemesData.length - 1 ? prev + 1 : 0
-    );
-  }, [currentThemeIndex]);
+  };
 
   return (
     <motion.div className="min-h-screen bg-gray-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
