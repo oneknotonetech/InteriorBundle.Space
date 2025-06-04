@@ -37,7 +37,7 @@ const Header: React.FC = React.memo(() => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Three-column flex layout with perfect centering */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center h-20">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center h-20">
           {/* Left column: Logo/Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-3 group">
@@ -80,9 +80,9 @@ const Header: React.FC = React.memo(() => {
           </nav>
 
           {/* Right column: Actions */}
-          <div className="flex items-center justify-end space-x-3 w-full">
+          <div className="flex items-center justify-end space-x-2">
             {/* Search */}
-            <div className="hidden md:flex relative">
+            {/* <div className="hidden md:flex relative">
               <input
                 type="text"
                 placeholder="Search furniture, decor, styles..."
@@ -94,21 +94,16 @@ const Header: React.FC = React.memo(() => {
                 }}
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-gray)' }} />
-            </div>
+            </div> */}
             {/* Wishlist */}
             <Link href="/wishlist" className="relative group p-2 rounded hover:bg-[var(--color-gray)] transition">
               <Heart className="w-5 h-5" style={{ color: 'var(--color-black)' }} />
-              <span className="absolute -top-1 -right-1 bg-[var(--color-black)] text-[var(--color-white)] text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                3
-              </span>
             </Link>
             {/* Cart */}
             <Link href="/cart" className="relative group p-2 rounded hover:bg-[var(--color-gray)] transition">
               <ShoppingCart className="w-5 h-5" style={{ color: 'var(--color-black)' }} />
-              <span className="absolute -top-1 -right-1 bg-[var(--color-black)] text-[var(--color-white)] text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                2
-              </span>
             </Link>
+           
             {/* User/Login */}
             <Link href="/auth/profile-page" className="group p-2 rounded hover:bg-[var(--color-gray)] transition">
               <User className="w-5 h-5" style={{ color: 'var(--color-black)' }} />

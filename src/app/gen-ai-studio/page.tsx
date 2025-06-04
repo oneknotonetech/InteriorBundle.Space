@@ -1,7 +1,6 @@
-// app/gen-ai-studio/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Upload, Sparkles, Image, Trash2, Eye, Download, RefreshCw, AlertCircle,
@@ -12,26 +11,503 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSharedData } from '../../lib/context/SharedDataContext';
 import { PreviewModal, ProgressBar, StatusBadge } from '../../components/shared/SharedComponents';
-import { downloadImage, LOCAL_STORAGE_KEY } from '../../lib/utils';
 import { TableRowData, UploadedImage, UserSubmission } from '../../lib/types';
 import Navigation from '@/components/Navigation';
+import { set, get } from 'idb-keyval';
+
+const LOCAL_STORAGE_KEY = 'ai-design-user-rows';
+
+// Fixed downloadImage function that properly handles blob URLs
+const downloadImage = async (imageUrl: string, filename: string) => {
+  try {
+    let blob: Blob;
+    
+    // Check if it's a blob URL (from IndexedDB)
+    if (imageUrl.startsWith('blob:')) {
+      // Fetch the blob from the blob URL
+      const response = await fetch(imageUrl);
+      blob = await response.blob();
+    } else {
+      // Handle regular URLs (like generated images from server)
+      const response = await fetch(imageUrl);
+      blob = await response.blob();
+    }
+    
+    // Create a new blob URL for download
+    const downloadUrl = window.URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the download URL after a short delay
+    setTimeout(() => {
+      window.URL.revokeObjectURL(downloadUrl);
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Download failed:', error);
+    // Fallback: try direct link approach
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
+
+// Function to download image directly from IndexedDB
+const downloadImageFromIndexedDB = async (imageId: string, filename: string) => {
+  try {
+    const file = await get(imageId);
+    if (file instanceof Blob) {
+      const url = window.URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } else {
+      console.error('No file found in IndexedDB for id:', imageId);
+    }
+  } catch (error) {
+    console.error('IndexedDB download failed:', error);
+  }
+};
+
+// Add a hook to get object URLs for a list of image ids
+function useImageObjectUrls(images: UploadedImage[]) {
+  const [urls, setUrls] = useState<{ [id: string]: string }>({});
+  const prevUrls = useRef<{ [id: string]: string }>({});
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUrls = async () => {
+      const newUrls: { [id: string]: string } = {};
+      for (const img of images) {
+        const file = await get(img.id);
+        if (file) {
+          newUrls[img.id] = URL.createObjectURL(file);
+        }
+      }
+      if (isMounted) {
+        setUrls(newUrls);
+      }
+    };
+    fetchUrls();
+    // Cleanup old object URLs
+    return () => {
+      isMounted = false;
+      Object.values(prevUrls.current).forEach(url => URL.revokeObjectURL(url));
+      prevUrls.current = urls;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images.map(img => img.id).join(",")]);
+  return urls;
+}
+
+// UserRow component for rendering each table row
+import React from 'react';
+
+interface UserRowProps {
+  row: TableRowData;
+  index: number;
+  getRowStatus: (rowId: number) => 'idle' | 'generating' | 'completed' | 'error';
+  getSubmission: (rowId: number) => UserSubmission | undefined;
+  draggedCell: { rowId: number; column: 'inspiration' | 'area' } | null;
+  handleDragOver: (e: React.DragEvent, rowId: number, column: 'inspiration' | 'area') => void;
+  handleDragLeave: () => void;
+  handleDrop: (e: React.DragEvent, rowId: number, column: 'inspiration' | 'area') => void;
+  handleImageUpload: (rowId: number, column: 'inspiration' | 'area', files: FileList) => void;
+  setPreviewImage: (url: string) => void;
+  removeImage: (rowId: number, column: 'inspiration' | 'area', imageId: string) => void;
+  submitForProcessing: (rowId: number) => void;
+}
+
+function UserRow({
+  row,
+  index,
+  getRowStatus,
+  getSubmission,
+  draggedCell,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  handleImageUpload,
+  setPreviewImage,
+  removeImage,
+  submitForProcessing,
+}: UserRowProps) {
+  const rowStatus = getRowStatus(row.id);
+  const submission = getSubmission(row.id);
+  const inspirationImageUrls = useImageObjectUrls(row.inspirationImages);
+  const areaImageUrls = useImageObjectUrls(row.areaImages);
+
+  // Enhanced download function for all images in this row
+  const handleDownloadAllImages = async () => {
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    
+    // Download inspiration images
+    for (let i = 0; i < row.inspirationImages.length; i++) {
+      const img = row.inspirationImages[i];
+      await downloadImageFromIndexedDB(img.id, `inspiration-${i + 1}-${img.name}`);
+      if (i < row.inspirationImages.length - 1) await delay(200);
+    }
+    
+    // Download area images
+    for (let i = 0; i < row.areaImages.length; i++) {
+      const img = row.areaImages[i];
+      await downloadImageFromIndexedDB(img.id, `area-${i + 1}-${img.name}`);
+      if (i < row.areaImages.length - 1) await delay(200);
+    }
+    
+    // Download generated image if available
+    if (submission?.generatedImage) {
+      await delay(200);
+      await downloadImage(submission.generatedImage, `ai-design-row-${row.id}.jpg`);
+    }
+  };
+
+  return (
+    <motion.tr
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="hover:bg-gray-50 transition-colors"
+    >
+      {/* Row Number */}
+      <td className="px-6 py-6 text-center">
+        <div className="relative">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+            {row.id}
+          </div>
+          {submission && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
+              <div className="w-full h-full bg-green-500 rounded-full animate-pulse"></div>
+            </div>
+          )}
+        </div>
+      </td>
+      {/* Inspirations Column */}
+      <td className="px-6 py-6">
+        <div className="space-y-3">
+          <div
+            onDragOver={(e) => handleDragOver(e, row.id, 'inspiration')}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, row.id, 'inspiration')}
+            className={`border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-blue-50 ${
+              draggedCell?.rowId === row.id && draggedCell?.column === 'inspiration'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-300'
+            }`}
+          >
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              id={`inspiration-${row.id}`}
+              onChange={(e) => e.target.files && handleImageUpload(row.id, 'inspiration', e.target.files)}
+            />
+            <label
+              htmlFor={`inspiration-${row.id}`}
+              className="cursor-pointer flex items-center justify-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-sm font-medium">Add Inspiration</span>
+            </label>
+          </div>
+          {row.inspirationImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {row.inspirationImages.map((image) => (
+                <motion.div
+                  key={image.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden"
+                >
+                  <img
+                    src={inspirationImageUrls[image.id]}
+                    alt={image.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all" />
+                  <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-white hover:bg-white/20"
+                      onClick={() => setPreviewImage(inspirationImageUrls[image.id])}
+                    >
+                      <Eye className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-white hover:bg-white/20"
+                      onClick={() => downloadImageFromIndexedDB(image.id, image.name)}
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-white hover:bg-white/20"
+                      onClick={() => removeImage(row.id, 'inspiration', image.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </td>
+      {/* Area Column */}
+      <td className="px-6 py-6">
+        <div className="space-y-3">
+          <div
+            onDragOver={(e) => handleDragOver(e, row.id, 'area')}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, row.id, 'area')}
+            className={`border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer hover:border-purple-400 hover:bg-purple-50 ${
+              draggedCell?.rowId === row.id && draggedCell?.column === 'area'
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-gray-300'
+            }`}
+          >
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              id={`area-${row.id}`}
+              onChange={(e) => e.target.files && handleImageUpload(row.id, 'area', e.target.files)}
+            />
+            <label
+              htmlFor={`area-${row.id}`}
+              className="cursor-pointer flex items-center justify-center space-x-2 text-gray-600 hover:text-purple-600 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-sm font-medium">Add Your Space</span>
+            </label>
+          </div>
+          {row.areaImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {row.areaImages.map((image) => (
+                <motion.div
+                  key={image.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden"
+                >
+                  <img
+                    src={areaImageUrls[image.id]}
+                    alt={image.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all" />
+                  <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-white hover:bg-white/20"
+                      onClick={() => setPreviewImage(areaImageUrls[image.id])}
+                    >
+                      <Eye className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-white hover:bg-white/20"
+                      onClick={() => downloadImageFromIndexedDB(image.id, image.name)}
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-white hover:bg-white/20"
+                      onClick={() => removeImage(row.id, 'area', image.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </td>
+      {/* Status & Progress Column */}
+      <td className="px-6 py-6">
+        <div className="space-y-3">
+          {rowStatus === 'idle' && row.inspirationImages.length > 0 && row.areaImages.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center">
+                <StatusBadge status={rowStatus} />
+              </div>
+              <Button
+                onClick={() => submitForProcessing(row.id)}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                size="sm"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Generate AI Design
+              </Button>
+            </div>
+          )}
+          {rowStatus === 'idle' && (row.inspirationImages.length === 0 || row.areaImages.length === 0) && (
+            <div className="text-center py-4">
+              <StatusBadge status={rowStatus} />
+              <p className="text-xs text-gray-500 mt-2">Upload images to both columns to get started</p>
+            </div>
+          )}
+          {rowStatus === 'generating' && submission && (
+            <div className="space-y-3">
+              <div className="text-center py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                <StatusBadge status={submission.status} />
+                {submission.status === 'in_progress' && (
+                  <p className="text-xs text-green-600 mt-2 font-medium">
+                    ✓ Our AI is creating your design
+                  </p>
+                )}
+              </div>
+              <ProgressBar
+                progress={submission.progress || 10}
+                status={submission.status}
+              />
+            </div>
+          )}
+          {rowStatus === 'completed' && (
+            <div className="text-center py-3 bg-green-50 rounded-lg border border-green-200">
+              <StatusBadge status={rowStatus} />
+              <p className="text-xs text-green-600 mt-2 font-medium">✨ Design ready for download</p>
+            </div>
+          )}
+          {rowStatus === 'error' && (
+            <div className="text-center py-3 bg-red-50 rounded-lg border border-red-200">
+              <AlertCircle className="w-6 h-6 mx-auto text-red-600 mb-2" />
+              <StatusBadge status={rowStatus} />
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => submitForProcessing(row.id)}
+                className="text-blue-600 hover:text-blue-800 underline mt-2"
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+        </div>
+      </td>
+      {/* Result Column */}
+      <td className="px-6 py-6">
+        <div className="space-y-3">
+          {rowStatus === 'completed' && submission?.generatedImage ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-3"
+            >
+              <div className="relative group">
+                <img
+                  src={submission.generatedImage}
+                  alt="AI Generated Design"
+                  className="w-full h-32 object-cover rounded-lg shadow-md"
+                />
+                <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg" />
+                <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 bg-white/90 hover:bg-white text-gray-700 hover:text-black"
+                    onClick={() => setPreviewImage(submission.generatedImage!)}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 bg-white/90 hover:bg-white text-gray-700 hover:text-black"
+                    onClick={() => downloadImage(submission.generatedImage!, `ai-design-row-${row.id}.jpg`)}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => downloadImage(submission.generatedImage!, `ai-design-row-${row.id}.jpg`)}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  Design
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownloadAllImages}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  All Files
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="flex gap-2 items-center min-h-[128px]">
+              {row.inspirationImages.concat(row.areaImages).length > 0 ? (
+                row.inspirationImages.concat(row.areaImages).slice(0, 2).map((img) => (
+                  <img
+                    key={img.id}
+                    src={inspirationImageUrls[img.id] || areaImageUrls[img.id]}
+                    alt={img.name}
+                    className="w-16 h-16 object-cover rounded shadow"
+                  />
+                ))
+              ) : (
+                <Card className="w-full h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                  <CardContent className="p-4 text-center">
+                    <Sparkles className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 font-medium">
+                      Upload images to get started
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      </td>
+    </motion.tr>
+  );
+}
 
 const UserDashboard: React.FC = () => {
   const { submissions, addSubmission } = useSharedData();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   
-  const [userRows, setUserRows] = useState<TableRowData[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch {
-          // fallback to default
-        }
-      }
-    }
-    return Array.from({ length: 8 }, (_, index) => ({
+  const [userRows, setUserRows] = useState<TableRowData[]>(() => 
+    Array.from({ length: 8 }, (_, index) => ({
       id: index + 1,
       inspirationImages: [],
       areaImages: [],
@@ -39,26 +515,43 @@ const UserDashboard: React.FC = () => {
       userId: 'user1',
       userName: 'John Doe',
       priority: 'medium' as const
-    }));
-  });
+    }))
+  );
 
+  // Load data from localStorage after mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userRows));
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setUserRows(parsed);
+      } catch {
+        // If parsing fails, keep the default state
+      }
     }
+  }, []);
+
+  // Save to localStorage whenever userRows changes
+  useEffect(() => {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userRows));
   }, [userRows]);
 
   const [draggedCell, setDraggedCell] = useState<{ rowId: number; column: 'inspiration' | 'area' } | null>(null);
   const userSubmissions = submissions.filter(s => s.userId === 'user1') || [];
 
-  const handleImageUpload = (rowId: number, column: 'inspiration' | 'area', files: FileList) => {
-    const newImages: UploadedImage[] = Array.from(files).map(file => ({
-      id: `${rowId}-${column}-${Date.now()}-${Math.random()}`,
-      file,
-      name: file.name,
-      size: file.size,
-      url: URL.createObjectURL(file),
-      uploadedAt: new Date().toISOString()
+  // Update handleImageUpload to use IndexedDB
+  const handleImageUpload = async (rowId: number, column: 'inspiration' | 'area', files: FileList) => {
+    const newImages: UploadedImage[] = await Promise.all(Array.from(files).map(async (file) => {
+      const id = `${rowId}-${column}-${Date.now()}-${Math.random()}`;
+      await set(id, file); // Store the file blob in IndexedDB
+      return {
+        id,
+        file,
+        name: file.name,
+        size: file.size,
+        url: '', // Not used anymore
+        uploadedAt: new Date().toISOString()
+      };
     }));
 
     setUserRows(prev => prev.map(row => {
@@ -314,325 +807,23 @@ const UserDashboard: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   <AnimatePresence>
-                    {userRows.map((row, index) => {
-                      const rowStatus = getRowStatus(row.id);
-                      const submission = getSubmission(row.id);
-                      
-                      return (
-                        <motion.tr
-                          key={row.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          {/* Row Number */}
-                          <td className="px-6 py-6 text-center">
-                            <div className="relative">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                {row.id}
-                              </div>
-                              {submission && (
-                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
-                                  <div className="w-full h-full bg-green-500 rounded-full animate-pulse"></div>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Inspirations Column */}
-                          <td className="px-6 py-6">
-                            <div className="space-y-3">
-                              <div
-                                onDragOver={(e) => handleDragOver(e, row.id, 'inspiration')}
-                                onDragLeave={handleDragLeave}
-                                onDrop={(e) => handleDrop(e, row.id, 'inspiration')}
-                                className={`border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-blue-50 ${
-                                  draggedCell?.rowId === row.id && draggedCell?.column === 'inspiration'
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-300'
-                                }`}
-                              >
-                                <input
-                                  type="file"
-                                  multiple
-                                  accept="image/*"
-                                  className="hidden"
-                                  id={`inspiration-${row.id}`}
-                                  onChange={(e) => e.target.files && handleImageUpload(row.id, 'inspiration', e.target.files)}
-                                />
-                                <label 
-                                  htmlFor={`inspiration-${row.id}`}
-                                  className="cursor-pointer flex items-center justify-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
-                                >
-                                  <Plus className="w-5 h-5" />
-                                  <span className="text-sm font-medium">Add Inspiration</span>
-                                </label>
-                              </div>
-
-                              {row.inspirationImages.length > 0 && (
-                                <div className="grid grid-cols-3 gap-2">
-                                  {row.inspirationImages.map((image) => (
-                                    <motion.div
-                                      key={image.id}
-                                      initial={{ opacity: 0, scale: 0.8 }}
-                                      animate={{ opacity: 1, scale: 1 }}
-                                      exit={{ opacity: 0, scale: 0.8 }}
-                                      className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden"
-                                    >
-                                      <img
-                                        src={image.url}
-                                        alt={image.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all" />
-                                      <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-6 w-6 text-white hover:bg-white/20"
-                                          onClick={() => setPreviewImage(image.url)}
-                                        >
-                                          <Eye className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-6 w-6 text-white hover:bg-white/20"
-                                          onClick={() => removeImage(row.id, 'inspiration', image.id)}
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
-                                    </motion.div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Area Column */}
-                          <td className="px-6 py-6">
-                            <div className="space-y-3">
-                              <div
-                                onDragOver={(e) => handleDragOver(e, row.id, 'area')}
-                                onDragLeave={handleDragLeave}
-                                onDrop={(e) => handleDrop(e, row.id, 'area')}
-                                className={`border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer hover:border-purple-400 hover:bg-purple-50 ${
-                                  draggedCell?.rowId === row.id && draggedCell?.column === 'area'
-                                    ? 'border-purple-500 bg-purple-50'
-                                    : 'border-gray-300'
-                                }`}
-                              >
-                                <input
-                                  type="file"
-                                  multiple
-                                  accept="image/*"
-                                  className="hidden"
-                                  id={`area-${row.id}`}
-                                  onChange={(e) => e.target.files && handleImageUpload(row.id, 'area', e.target.files)}
-                                />
-                                <label 
-                                  htmlFor={`area-${row.id}`}
-                                  className="cursor-pointer flex items-center justify-center space-x-2 text-gray-600 hover:text-purple-600 transition-colors"
-                                >
-                                  <Plus className="w-5 h-5" />
-                                  <span className="text-sm font-medium">Add Your Space</span>
-                                </label>
-                              </div>
-
-                              {row.areaImages.length > 0 && (
-                                <div className="grid grid-cols-3 gap-2">
-                                  {row.areaImages.map((image) => (
-                                    <motion.div
-                                      key={image.id}
-                                      initial={{ opacity: 0, scale: 0.8 }}
-                                      animate={{ opacity: 1, scale: 1 }}
-                                      exit={{ opacity: 0, scale: 0.8 }}
-                                      className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden"
-                                    >
-                                      <img
-                                        src={image.url}
-                                        alt={image.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all" />
-                                      <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-6 w-6 text-white hover:bg-white/20"
-                                          onClick={() => setPreviewImage(image.url)}
-                                        >
-                                          <Eye className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-6 w-6 text-white hover:bg-white/20"
-                                          onClick={() => removeImage(row.id, 'area', image.id)}
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
-                                    </motion.div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Status & Progress Column */}
-                          <td className="px-6 py-6">
-                            <div className="space-y-3">
-                              {rowStatus === 'idle' && row.inspirationImages.length > 0 && row.areaImages.length > 0 && (
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-center">
-                                    <StatusBadge status={rowStatus} />
-                                  </div>
-                                  <Button
-                                    onClick={() => submitForProcessing(row.id)}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                                    size="sm"
-                                  >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Generate AI Design
-                                  </Button>
-                                </div>
-                              )}
-
-                              {rowStatus === 'idle' && (row.inspirationImages.length === 0 || row.areaImages.length === 0) && (
-                                <div className="text-center py-4">
-                                  <StatusBadge status={rowStatus} />
-                                  <p className="text-xs text-gray-500 mt-2">Upload images to both columns to get started</p>
-                                </div>
-                              )}
-
-                              {rowStatus === 'generating' && submission && (
-                                <div className="space-y-3">
-                                  <div className="text-center py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                                    <StatusBadge status={submission.status} />
-                                    {submission.status === 'in_progress' && (
-                                      <p className="text-xs text-green-600 mt-2 font-medium">
-                                        ✓ Our AI is creating your design
-                                      </p>
-                                    )}
-                                  </div>
-                                  <ProgressBar 
-                                    progress={submission.progress || 10} 
-                                    status={submission.status} 
-                                  />
-                                </div>
-                              )}
-
-                              {rowStatus === 'completed' && (
-                                <div className="text-center py-3 bg-green-50 rounded-lg border border-green-200">
-                                  <StatusBadge status={rowStatus} />
-                                  <p className="text-xs text-green-600 mt-2 font-medium">✨ Design ready for download</p>
-                                </div>
-                              )}
-
-                              {rowStatus === 'error' && (
-                                <div className="text-center py-3 bg-red-50 rounded-lg border border-red-200">
-                                  <AlertCircle className="w-6 h-6 mx-auto text-red-600 mb-2" />
-                                  <StatusBadge status={rowStatus} />
-                                  <Button
-                                    variant="link"
-                                    size="sm"
-                                    onClick={() => submitForProcessing(row.id)}
-                                    className="text-blue-600 hover:text-blue-800 underline mt-2"
-                                  >
-                                    Try Again
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Result Column */}
-                          <td className="px-6 py-6">
-                            <div className="space-y-3">
-                              {rowStatus === 'completed' && submission?.generatedImage ? (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.8 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  className="space-y-3"
-                                >
-                                  <div className="relative group">
-                                    <img
-                                      src={submission.generatedImage}
-                                      alt="AI Generated Design"
-                                      className="w-full h-32 object-cover rounded-lg shadow-md"
-                                    />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg" />
-                                    <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8 bg-white/90 hover:bg-white text-gray-700 hover:text-black"
-                                        onClick={() => setPreviewImage(submission.generatedImage!)}
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8 bg-white/90 hover:bg-white text-gray-700 hover:text-black"
-                                        onClick={() => downloadImage(submission.generatedImage!, `ai-design-row-${row.id}.jpg`)}
-                                      >
-                                        <Download className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => downloadImage(submission.generatedImage!, `ai-design-row-${row.id}.jpg`)}
-                                    >
-                                      <Download className="w-3 h-3 mr-1" />
-                                      Design
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        row.inspirationImages.forEach((img, idx) => {
-                                          downloadImage(img.url, `inspiration-${idx + 1}-${img.name}`);
-                                        });
-                                        row.areaImages.forEach((img, idx) => {
-                                          downloadImage(img.url, `area-${idx + 1}-${img.name}`);
-                                        });
-                                        if (submission.generatedImage) {
-                                          downloadImage(submission.generatedImage, `ai-design-row-${row.id}.jpg`);
-                                        }
-                                      }}
-                                    >
-                                      <Download className="w-3 h-3 mr-1" />
-                                      All Files
-                                    </Button>
-                                  </div>
-                                </motion.div>
-                              ) : (
-                                <Card className="w-full h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                                  <CardContent className="p-4 text-center">
-                                    <Sparkles className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-sm text-gray-500 font-medium">
-                                      {row.inspirationImages.length === 0 || row.areaImages.length === 0
-                                        ? 'Upload images to get started'
-                                        : rowStatus === 'idle'
-                                        ? 'Ready for AI generation'
-                                        : 'AI design will appear here'}
-                                    </p>
-                                  </CardContent>
-                                </Card>
-                              )}
-                            </div>
-                          </td>
-                        </motion.tr>
-                      );
-                    })}
+                    {userRows.map((row, index) => (
+                      <UserRow
+                        key={row.id}
+                        row={row}
+                        index={index}
+                        getRowStatus={getRowStatus}
+                        getSubmission={getSubmission}
+                        draggedCell={draggedCell}
+                        handleDragOver={handleDragOver}
+                        handleDragLeave={handleDragLeave}
+                        handleDrop={handleDrop}
+                        handleImageUpload={handleImageUpload}
+                        setPreviewImage={setPreviewImage}
+                        removeImage={removeImage}
+                        submitForProcessing={submitForProcessing}
+                      />
+                    ))}
                   </AnimatePresence>
                 </tbody>
               </motion.table>
