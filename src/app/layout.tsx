@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
+import ClientHeader from "@/components/ClientHeader";
 import Footer from "@/components/Footer";
 import { Poppins } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.className} antialiased`}>
       <body style={{ background: 'var(--color-white)', color: 'var(--color-black)' }}>
-        <Header />
+        <ClientHeader />
         <SharedDataProvider>
           {children}
         </SharedDataProvider>

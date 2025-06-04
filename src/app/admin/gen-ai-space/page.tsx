@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Upload, Eye, Download, RefreshCw, X, AlertCircle, CheckCircle,
-  Shield, Settings, Bell, Search, Filter, FileText, Package, MessageSquare,
-  Trash2, LogOut, Clock
+  Search, Filter, FileText, Package, MessageSquare,
+  Trash2, Clock 
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSharedData } from '../../../lib/context/SharedDataContext';
 import { PreviewModal, ProgressBar, StatusBadge, PriorityBadge } from '../../../components/shared/SharedComponents';
 import { UserSubmission } from '../../../lib/types';
-import Navigation from '../../../components/Navigation';
 import { get } from 'idb-keyval';
 
 // Fixed downloadImage function that properly handles blob URLs
@@ -603,39 +602,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
-      <Navigation />
-      {/* Admin Navigation Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">AI Design Admin</h1>
-                  <p className="text-sm text-gray-500">Administrative Dashboard</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Bell className="w-4 h-4 mr-2" />
-                Notifications
-              </Button>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Admin Settings
-              </Button>
-              <Button variant="ghost" size="sm">
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Admin Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
