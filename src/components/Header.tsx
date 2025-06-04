@@ -11,6 +11,7 @@ import {
   Heart,
   X
 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -18,12 +19,13 @@ const NAV_LINKS = [
   { label: 'Inspirations', href: '/inspiration' },
   { label: 'Design Themes', href: '/design-themes' },
   { label: 'GenAI Studio', href: '/gen-ai-studio' },
-  { label: '3D Visualizer', href: '/3D-visualizer' },
+  { label: 'Visualizer', href: '/3D-visualizer' },
   { label: 'Wishlist', href: '/wishlist' },
 ];
 
 const Header: React.FC = React.memo(() => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header
@@ -63,20 +65,23 @@ const Header: React.FC = React.memo(() => {
 
           {/* Center column: Navigation (perfectly centered) */}
           <nav className="hidden lg:flex items-center justify-center space-x-8">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-sm font-medium px-2 py-1 rounded transition-colors whitespace-nowrap hover:text-[var(--color-gray)]"
-                style={{
-                  color: 'var(--color-black)',
-                  borderRadius: '0.5rem',
-                }}
-                onClick={() => setShowMobileMenu(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`text-sm font-medium px-2 py-1 rounded transition-colors whitespace-nowrap hover:text-[var(--color-gray)] ${isActive ? 'bg-[var(--color-gray)] text-[var(--color-black)] font-bold' : ''}`}
+                  style={{
+                    color: 'var(--color-black)',
+                    borderRadius: '0.5rem',
+                  }}
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right column: Actions */}

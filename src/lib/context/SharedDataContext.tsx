@@ -1,7 +1,7 @@
 // lib/context/SharedDataContext.tsx
 'use client'
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef } from 'react';
 import { UserSubmission } from '../types';
 
 interface SharedDataContextType {
@@ -27,11 +27,12 @@ interface SharedDataProviderProps {
 
 export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children }) => {
   const [submissions, setSubmissions] = useState<UserSubmission[]>([]);
+  const idCounter = useRef(1);
 
   const addSubmission = (submission: Omit<UserSubmission, 'id'>) => {
     const newSubmission: UserSubmission = {
       ...submission,
-      id: Date.now().toString()
+      id: (idCounter.current++).toString()
     };
     setSubmissions(prev => [newSubmission, ...prev]);
   };
